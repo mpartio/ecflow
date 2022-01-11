@@ -125,6 +125,10 @@ void ClientInvoker::set_user_name(const std::string& user) {
    clientEnv_.clear_user_password(); // force re-check of password
 }
 
+void ClientInvoker::set_password(const std::string& password) {
+   clientEnv_.set_password(password);
+}
+
 void ClientInvoker::taskPath(const std::string& s) {
 	test_ = true;
 	clientEnv_.taskPath(s);
@@ -182,7 +186,7 @@ int ClientInvoker::get_cmd_from_args(int argc, char* argv[], Cmd_ptr& cts_cmd) c
 
       // For --help and --debug, --load defs check_only no command is created
       // When testInterface avoid writing to standard out.
-      if (!cts_cmd.get()) {
+      if (cts_cmd && !cts_cmd.get()) {
          if (!testInterface_ && clientEnv_.debug()) {
             cout << "args: "; for ( int x=0; x< argc; x++) cout << argv[x] << " "; cout << "\n";
          }

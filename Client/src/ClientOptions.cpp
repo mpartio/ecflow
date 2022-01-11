@@ -61,6 +61,8 @@ ClientOptions::ClientOptions()
             "host: If specified will override the environment variable ECF_HOST and default host, localhost");
    desc_->add_options()("user",po::value< string >()->implicit_value( string("") ),
             "user: The user name to be used when contacting the server. Can only be used when password is also specified");
+   desc_->add_options()("password",po::value< string >()->implicit_value( string("") ),
+            "password: The password to be used when contacting the server");
 #ifdef ECF_OPENSSL
    desc_->add_options()("ssl","ssl: If specified will override the environment variable ECF_SSL");
 #endif
@@ -135,6 +137,13 @@ Cmd_ptr ClientOptions::parse(int argc, char* argv[],ClientEnvironment* env) cons
        if (env->debug())  std::cout << "  user " << user << " overridden at the command line\n";
        env->set_user_name(user);
     }
+#if 0
+   if ( vm.count( "password" ) ) {
+       std::string password = vm[ "password" ].as< std::string > ();
+       if (env->debug())  std::cout << "  password overridden at the command line\n";
+       env->set_password(crypt(password.c_str(), env->get_user_name().c_str()));
+    }
+#endif
 
 #ifdef ECF_OPENSSL
    if ( vm.count( "ssl" )) {
@@ -169,7 +178,7 @@ Cmd_ptr ClientOptions::parse(int argc, char* argv[],ClientEnvironment* env) cons
 
       if ( vm.count( "version" ) )  {
          cout << Version::description()  << "\n";
-         exit(0);
+         return nullptr;
       }
 
       std::stringstream ss;

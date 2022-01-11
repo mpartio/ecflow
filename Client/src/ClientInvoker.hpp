@@ -87,6 +87,7 @@ public:
    /// This will override the environment setting. ECF_USER or --user
    /// Clear password, so that re-validate users password from password file
    void set_user_name(const std::string& user);
+   void set_password(const std::string& password);
 
 	/// Whenever there is a connections failure we wait a number of seconds
 	/// before trying again. ( i.e. to get round glitches in the network.)
@@ -106,7 +107,7 @@ public:
 	/// Will attempt to connect to the server a number of times. If this fails it will
 	/// try the next server, and so on until a timeout period is reached.
 	int invoke( int argc, char* argv[]) const;
-
+        int invoke( const std::vector<std::string>& args ) const;
 
 	/// If testing, overwrite the task path set in the environment, required for
 	/// testing the task based commands.
@@ -176,6 +177,10 @@ public:
 	void set_child_pid(const std::string& pid) { clientEnv_.set_child_pid(pid);}
 	void set_child_try_no(unsigned int try_no) { clientEnv_.set_child_try_no(try_no);}
 	void set_child_timeout(unsigned int seconds) { clientEnv_.set_child_cmd_timeout(seconds);} // ECF_TIMEOUT default is 24 hours allow python jobs to override
+        void set_child_host_file(const std::string& host_file) { clientEnv_.set_child_host_file(host_file);}
+        void set_child_denied(bool denied) { clientEnv_.set_child_denied(denied);}
+        void set_child_no_ecf(bool no_ecf) { clientEnv_.set_child_no_ecf(no_ecf);}
+
     void set_child_init_add_vars(const std::vector<Variable>& vars) { clientEnv_.set_child_init_add_vars(vars);}
     void set_child_complete_del_vars(std::vector<std::string>& vars) { clientEnv_.set_child_complete_del_vars(vars);}
     void set_zombie_child_timeout(unsigned int seconds){clientEnv_.set_zombie_child_cmd_timeout(seconds);} // ECF_ZOMBIE_TIMEOUT default is 24 hours allow python jobs to override
@@ -358,8 +363,7 @@ private:
 
 	/// returns 1 on error and 0 on success. The errorMsg can be accessed via errorMsg()
 	int invoke( const std::string& arg ) const;
-   int invoke( const std::vector<std::string>& args ) const;
-   int invoke(Cmd_ptr) const; // assumes clients of Cmd_ptr constructor has caught exceptions
+  int invoke(Cmd_ptr) const; // assumes clients of Cmd_ptr constructor has caught exceptions
 
    int do_invoke_cmd(Cmd_ptr) const;
 	int load_in_memory_defs( const defs_ptr& clientDefs, bool force) const; /// For clients that want to load a in memory definition into the server.

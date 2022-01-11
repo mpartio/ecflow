@@ -26,6 +26,7 @@
 #include "EcfFile.hpp"
 #include "JobsParam.hpp"
 #include "SuiteChanged.hpp"
+#include "Base64.hpp"
 
 using namespace ecf;
 using namespace std;
@@ -380,14 +381,26 @@ void EditScriptCmd::create( 	Cmd_ptr& cmd,
 		string path_to_script = args[2];
 		std::vector<std::string> script_lines;
 
- 		if (!fs::exists(path_to_script)) {
- 			ss << "The script file specified '" << path_to_script << "' does not exist\n";
+		if (base64_validate(path_to_script)) {
+			std::stringstream ss(base64_decode(path_to_script));
+			for (std::string line; std::getline(ss, line, '\n');) {
+				script_lines.push_back(line);
+			}
+		}
+		else if (fs::exists(path_to_script)) {
+			if (!File::splitFileIntoLines(path_to_script, script_lines)) {
+				ss << "Could not open script file " << path_to_script << " (" << strerror(errno) << ")";
+				throw std::runtime_error(ss.str());
+			}
+		}
+		else {
+			ss << "'" << path_to_script << "' is neither a file nor a base64 encoded string\n";
 			throw std::runtime_error(ss.str());
 		}
-	 	if (!File::splitFileIntoLines(path_to_script, script_lines)) {
- 			ss << "Could not open script file " << path_to_script << " (" << strerror(errno) << ")";
-			throw std::runtime_error(ss.str());
-	 	}
+
+		if (script_lines.empty()) {
+			throw std::runtime_error("Failed to process script");
+		}
 
 	 	if (edit_type == EditScriptCmd::SUBMIT || edit_type == EditScriptCmd::SUBMIT_USER_FILE) {
 	 		// extract the Used variables from the script file
