@@ -163,9 +163,12 @@ public:
    bool authenticateReadAccess(const std::string& user,bool custom_user,const std::string& passwd)const;
    bool authenticateReadAccess(const std::string& user,bool custom_user,const std::string& passwd,const std::string& path)const;
    bool authenticateReadAccess(const std::string& user,bool custom_user,const std::string& passwd,const std::vector<std::string>& paths)const;
- 	bool authenticateWriteAccess(const std::string& user) const;
+   bool authenticateTokenAccess(const std::string& token,const std::vector<std::string>& paths,const std::string& op)const;
+
+   bool authenticateWriteAccess(const std::string& user) const;
    bool authenticateWriteAccess(const std::string& user,const std::string& path)const;
    bool authenticateWriteAccess(const std::string& user,const std::vector<std::string>& paths)const;
+
 
 	/// return true if help option was selected
    bool help_option() const  { return help_option_; }

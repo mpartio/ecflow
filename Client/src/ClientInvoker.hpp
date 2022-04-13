@@ -88,6 +88,7 @@ public:
    /// Clear password, so that re-validate users password from password file
    void set_user_name(const std::string& user);
    void set_password(const std::string& password);
+   void set_token(const std::string& token);
 
 	/// Whenever there is a connections failure we wait a number of seconds
 	/// before trying again. ( i.e. to get round glitches in the network.)

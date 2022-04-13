@@ -67,6 +67,7 @@ public:
 	/// When the password is read in we crypt the password, using user name as a salt.
    virtual const std::string& get_custom_user_password(const std::string& user) const = 0;
    virtual const std::string& get_user_password(const std::string& user) const = 0;
+   virtual const std::string& get_token() const = 0;
    virtual void clear_user_password() = 0; // force password check again
 
    // returns a user specified user name. When this is used a password must be provided
@@ -75,6 +76,7 @@ public:
    // set password is needed when user is authenticated from an http server call: in this case
    // the password is given in the url (or some other means), so it will not be read from a local file
    virtual void set_password(const std::string&) = 0;
+   virtual void set_token(const std::string&) = 0;
 
 	/// Some commands work on construction. to avoid this under test. Call set_test
 	/// i.e Command like CtsCmd::SERVER_LOAD can be client side only, in which case

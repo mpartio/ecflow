@@ -122,8 +122,10 @@ public:
    const std::string& get_custom_user_password(const std::string& user) const override;
    void clear_user_password() override { passwd_.clear();}
    const std::string& get_user_name() const override { return user_name_;}
+   const std::string& get_token() const override { return token_;}
    void set_user_name(const std::string& name) override { user_name_ = name;}
    void set_password(const std::string& password) override { passwd_ = password; }
+   void set_token(const std::string& token) override { token_ = token; }
 	bool debug() const override { return debug_;} //enabled if ECF_DEBUG_CLIENT set
    void set_test() override { under_test_ = true; }
    bool under_test() const override { return under_test_; }
@@ -149,6 +151,7 @@ private:
 	std::string host_file_;             // ECF_HOSTFILE. File that lists the backup hosts, port numbers must match
 	std::string user_name_;
    mutable std::string passwd_;
+   mutable std::string token_;
 
 	long timeout_;                      // ECF_TIMEOUT. Host file iteration time out
    long zombie_timeout_;               // ECF_ZOMBIE_TIMEOUT. Host file iteration time out for zombies, default same as ECF_TIMEOUT

@@ -56,6 +56,17 @@ bool UserCmd::authenticate(AbstractServer* as, STC_Cmd_ptr& cmd) const
          return true;
       }
    }
+   else if (!token_.empty()) {
+      const std::string op = isWrite() ? "rw" : "ro";
+      if (as->authenticateTokenAccess(token_, {"/"}, op)) {
+         return true;
+      }
+
+      std::string msg = "[ authentication failed ] Token '";
+      msg += token_;
+      msg += "' is not allowed any access.";
+      throw std::runtime_error( msg );
+   }
 
    std::string msg = "[ authentication failed ] User '";
    msg += user_;
@@ -67,8 +78,8 @@ bool UserCmd::authenticate(AbstractServer* as, STC_Cmd_ptr& cmd) const
 
 bool UserCmd::do_authenticate(AbstractServer* as, STC_Cmd_ptr&, const std::string& path) const
 {
-   if (!user_.empty() && as->authenticateReadAccess(user_,cu_,pswd_,path)) {
 
+   if (!user_.empty() && as->authenticateReadAccess(user_,cu_,pswd_,path)) {
       // Does this user command require write access
       if ( isWrite() ) {
          // command requires write access. Check user has write access, add access to suite/node/path
@@ -84,6 +95,17 @@ bool UserCmd::do_authenticate(AbstractServer* as, STC_Cmd_ptr&, const std::strin
          // read request, and we have read access
          return true;
       }
+   }
+   else if (!token_.empty()) {
+      const std::string op = isWrite() ? "rw" : "ro";
+
+      if (as->authenticateTokenAccess(token_, {path}, op)) {
+         return true;
+      }
+      std::string msg = "[ authentication failed ] Token ";
+      msg += token_;
+      msg += " has no *write* access. path(";msg += path; msg += ")Please see your administrator.";
+      throw std::runtime_error( msg );
    }
 
    std::string msg = "[ authentication failed ] User '";
@@ -118,6 +140,9 @@ bool UserCmd::do_authenticate(AbstractServer* as, STC_Cmd_ptr&, const std::vecto
          return true;
       }
    }
+   else if (!token_.empty() && as->authenticateTokenAccess(token_, paths, "ro")) {
+      return true;
+   }
 
    std::string msg = "[ authentication failed ] User '";
    msg += user_;
@@ -137,6 +162,12 @@ void UserCmd::setup_user_authentification(const std::string& user, const std::st
    assert(!user_.empty());
 }
 
+void UserCmd::setup_user_authentification(const std::string& token)
+{
+   token_ = token;
+   assert(!token_.empty());
+}
+
 bool UserCmd::setup_user_authentification(AbstractClientEnv& clientEnv)
 {
    // A Custom user is one where:
@@ -146,15 +177,22 @@ bool UserCmd::setup_user_authentification(AbstractClientEnv& clientEnv)
    // Having a custom user name is an exception, to avoid having ALL user to provide a password
    // we have a CUSTOM password file ECF_CUSTOM_PASSWD,   <host>.<port>.ecf.custom_passwd
    const std::string& user_name = clientEnv.get_user_name(); // Using ECF_USER || --user <user> || set_user_name()/GUI
+   const std::string& token = clientEnv.get_token();
+
    if (!user_name.empty()) {
       cu_ = true;  // inform server side custom USER used, server will expect password in ECF_CUSTOM_PASSWD files
       const std::string& passwd = clientEnv.get_custom_user_password(user_name);
-      if (passwd.empty()) {
-         // cout << "invalid user as password is empty, must have a password when user specified \n";
-         return false; // invalid user as password is empty, must have a password when user specified
-      }
 
-      setup_user_authentification(user_name,passwd);
+      if (!passwd.empty()) {
+        setup_user_authentification(user_name,passwd);
+        return true;
+      }
+      // cout << "invalid user as password is empty, must have a password when user specified \n";
+      return false; // invalid user as password is empty, must have a password when user specified
+   }
+   else if (!token.empty()) {
+      cu_ = true;
+      setup_user_authentification(token);
       return true;
    }
 

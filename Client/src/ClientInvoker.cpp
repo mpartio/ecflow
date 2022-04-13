@@ -120,6 +120,9 @@ const std::string& ClientInvoker::port() const
    return clientEnv_.port();
 }
 
+void ClientInvoker::set_token(const std::string& token) {
+   clientEnv_.set_token(token);
+}
 void ClientInvoker::set_user_name(const std::string& user) {
    clientEnv_.set_user_name(user);
    clientEnv_.clear_user_password(); // force re-check of password

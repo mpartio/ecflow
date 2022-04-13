@@ -63,6 +63,8 @@ ClientOptions::ClientOptions()
             "user: The user name to be used when contacting the server. Can only be used when password is also specified");
    desc_->add_options()("password",po::value< string >()->implicit_value( string("") ),
             "password: The password to be used when contacting the server");
+   desc_->add_options()("token",po::value< string >()->implicit_value( string("") ),
+            "token: The authentication token to be used when contacting the server");
 #ifdef ECF_OPENSSL
    desc_->add_options()("ssl","ssl: If specified will override the environment variable ECF_SSL");
 #endif
@@ -132,6 +134,9 @@ Cmd_ptr ClientOptions::parse(int argc, char* argv[],ClientEnvironment* env) cons
       if (env->debug())  std::cout << "  rid " << rid << " overridden at the command line\n";
       env->set_remote_id(rid);
    }
+   if (( vm.count( "user" ) || vm.count( "password" )) && vm.count( "token" )) {
+      throw std::runtime_error("Both user&password and token cannot be specified at the same time");
+   }
    if ( vm.count( "user" ) ) {
        std::string user = vm[ "user" ].as< std::string > ();
        if (env->debug())  std::cout << "  user " << user << " overridden at the command line\n";
@@ -144,6 +149,11 @@ Cmd_ptr ClientOptions::parse(int argc, char* argv[],ClientEnvironment* env) cons
        env->set_password(crypt(password.c_str(), env->get_user_name().c_str()));
     }
 #endif
+   if ( vm.count( "token" ) ) {
+       std::string token = vm[ "token" ].as< std::string > ();
+       if (env->debug())  std::cout << "  token given at the command line\n";
+       env->set_token(token);
+    }
 
 #ifdef ECF_OPENSSL
    if ( vm.count( "ssl" )) {

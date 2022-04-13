@@ -426,7 +426,10 @@ bool BaseServer::authenticateReadAccess(const std::string& user,bool custom_user
 {
    return serverEnv_.authenticateReadAccess(user,custom_user,passwd,paths);
 }
-
+bool BaseServer::authenticateTokenAccess(const std::string& token,const std::vector<std::string>& paths,const std::string& op)
+{
+   return serverEnv_.authenticateTokenAccess(token,paths,op);
+}
 bool BaseServer::authenticateWriteAccess(const std::string& user )
 {
    return serverEnv_.authenticateWriteAccess(user);

@@ -66,6 +66,7 @@ public:
  	bool authenticateReadAccess(const std::string&,bool custom_user,const std::string& passwd) override { return true;}
    bool authenticateReadAccess(const std::string&,bool custom_user,const std::string& passwd, const std::string&) override{ return true;}
    bool authenticateReadAccess(const std::string&,bool custom_user,const std::string& passwd, const std::vector<std::string>&) override { return true;}
+   bool authenticateTokenAccess(const std::string&,const std::vector<std::string>&,const std::string&) override{ return true;}
  	bool authenticateWriteAccess(const std::string&) override { return true;}
    bool authenticateWriteAccess(const std::string&, const std::string&) override{ return true;}
    bool authenticateWriteAccess(const std::string&, const std::vector<std::string>&) override{ return true;}

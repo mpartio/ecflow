@@ -35,6 +35,7 @@ HTTPMethod method(const std::string& cmd) {
       { "sync", HttpServerException(501, "'sync' should be used with c++/python interface only") },
       { "sync_clock", HttpServerException(501, "'sync_clock' should be used with c++/python interface only") },
       { "sync_full", HttpServerException(501, "'sync_full' should be used with c++/python interface only") },
+      { "token", HttpServerException(405, "'token' should be passed with header") },
       { "user", HttpServerException(405, "'user' should be passed with header") }
    };
 

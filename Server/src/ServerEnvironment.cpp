@@ -23,6 +23,13 @@
 #include "boost/filesystem/path.hpp"
 #include <boost/lexical_cast.hpp>
 
+#ifdef ECF_OPENSSL
+#define CPPHTTPLIB_OPENSSL_SUPPORT
+#endif
+
+#include <httplib.h>
+#include <nlohmann/json.hpp>
+
 #include "ServerEnvironment.hpp"
 #include "ServerOptions.hpp"
 #include "Log.hpp"
@@ -503,6 +510,45 @@ bool ServerEnvironment::authenticateReadAccess(const std::string& user,bool cust
    else             { if (!passwd_custom_file_.authenticate(user,passwd)) return false;}
 
    return white_list_file_.verify_read_access(user,paths);
+}
+
+bool ServerEnvironment::authenticateTokenAccess(const std::string& token, const std::vector<std::string>& paths, const std::string& op) const
+{
+   const std::string auth_host = "ecflow-auth:5001";
+
+   httplib::Client cli(auth_host);
+
+   cli.set_bearer_token_auth(token.c_str());
+
+   auto res = cli.Get("/verify");
+
+   if (!res || res->status != 200) {
+      return false;
+   }
+
+   nlohmann::json j = nlohmann::json::parse(res->body);
+
+   if (paths.size() == 0) return true;
+
+   for (const auto& path : paths) {
+      for (const auto& el : j["privileges"]) {
+        for (const auto& ob : el.items()) {
+
+           const std::string path_ = ob.key();
+           const std::string op_ = ob.value();
+
+            if (op != op_ && op_ != "rw") {
+               continue;
+            }
+
+            if (path_.rfind(path, 0) == 0) {
+               return true;
+            }
+        }
+     }
+     return false;
+   }
+   return false;
 }
 
 bool ServerEnvironment::authenticateWriteAccess(const std::string& user) const

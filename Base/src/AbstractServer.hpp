@@ -132,16 +132,19 @@ public:
 	///     a/ None
 	///     b/ List mode.   ASCII file based on ECF_LISTS is defined. referred as white list file
 	///     c/ Secure mode. ASCII file based ECF_PASSWD is defined. Referred to as black list file
+        ///     d/ Token mode   Token-based authentication, where an external service is queried for authentication
 	//
 	/// Returns true if the given user has access to the server, false otherwise
    virtual bool authenticateReadAccess(const std::string& user,bool custom_user,const std::string& passwd) = 0;
    virtual bool authenticateReadAccess(const std::string& user,bool custom_user,const std::string& passwd,const std::string& path) = 0;
    virtual bool authenticateReadAccess(const std::string& user,bool custom_user,const std::string& passwd,const std::vector<std::string>& paths) = 0;
+   virtual bool authenticateTokenAccess(const std::string& token,const std::vector<std::string>& paths,const std::string& op) = 0;
 
 	/// Returns true if user has matching write access privileges.
    virtual bool authenticateWriteAccess(const std::string& user) = 0;
    virtual bool authenticateWriteAccess(const std::string& user, const std::string& path) = 0;
    virtual bool authenticateWriteAccess(const std::string& user, const std::vector<std::string>& paths) = 0;
+
 
 	/// Shutdown the server and let 'user' has have exclusive lock on it.
 	/// If the lock succeeds return true, (This will end up calling the shutdown()

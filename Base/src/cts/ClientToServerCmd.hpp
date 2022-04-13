@@ -617,8 +617,9 @@ public:
 
    const std::string& user() const { return user_;}
    const std::string& passwd() const { return pswd_;}
-
+   const std::string& token() const { return token_;};
    void setup_user_authentification(const std::string& user, const std::string& passwd) override;
+   void setup_user_authentification(const std::string& token);
    bool setup_user_authentification(AbstractClientEnv&) override;
    void setup_user_authentification() override;
 
@@ -648,6 +649,8 @@ protected:
 private:
    std::string user_;
    std::string pswd_;
+   std::string token_;
+
    bool cu_ =  false;    // custom user, i.e used set_user_name() || ECF_USER || --user -> only check this password
 
    friend class cereal::access;
@@ -656,6 +659,7 @@ private:
    {
       ar(cereal::base_class< ClientToServerCmd >( this ), CEREAL_NVP(user_));
       CEREAL_OPTIONAL_NVP(ar, pswd_, [this](){return !pswd_.empty(); }); // conditionally save
+      CEREAL_OPTIONAL_NVP(ar, token_, [this](){return !token_.empty(); }); // conditionally save
       CEREAL_OPTIONAL_NVP(ar, cu_,   [this](){return cu_; });            // conditionally save
    }
 };

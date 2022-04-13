@@ -68,6 +68,7 @@ public:
    bool authenticateReadAccess(const std::string& user,bool custom_user,const std::string& passwd) override;
    bool authenticateReadAccess(const std::string& user,bool custom_user,const std::string& passwd,const std::string& path) override;
    bool authenticateReadAccess(const std::string& user,bool custom_user,const std::string& passwd,const std::vector<std::string>& paths) override;
+   bool authenticateTokenAccess(const std::string& token,const std::vector<std::string>& paths,const std::string& op) override;
    bool authenticateWriteAccess(const std::string& user) override;
    bool authenticateWriteAccess(const std::string& user, const std::string& path) override;
    bool authenticateWriteAccess(const std::string& user, const std::vector<std::string>& paths) override;

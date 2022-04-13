@@ -36,6 +36,8 @@ target_include_directories(libserver PRIVATE src
                                              ../Base/src
                                              ../Base/src/cts
                                              ../Base/src/stc 
+                                             ../cpp-httplib
+                                             ../json
 )
 
 # =======================================================
