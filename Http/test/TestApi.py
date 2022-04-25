@@ -61,7 +61,7 @@ def test_clean_suite():
 
 @pytest.mark.dependency(depends=["test_ping"])
 def test_load_suite():
-    handle_response(request('post', '{}&command=load&argument={}'.format(get_url(), get_suite_definition(SUITE_DEFINITION_FILE))))
+    handle_response(request('post', '{}&command=load&argument={}'.format(get_url(), get_suite_definition(SUITE_DEFINITION_FILE))), expected_code = [201])
 
 @pytest.mark.dependency(depends=["test_load_suite"])
 def test_suites():
@@ -118,6 +118,17 @@ def test_suspend_suite():
 def test_resume_suite():
     handle_response(request('put', '{}&command=resume&argument1=/test'.format(get_url())))
 
+def wait_for_task_status(task, status):
+    status_ = None
+    cnt = 0
+    while status_ != status:
+        status_ = request('get', '{}&command=query&argument1=state&argument2={}'.format(get_url(), task)).content.decode("utf-8").strip()
+        print("Task {} status {}".format(task, status_))
+        cnt += 1
+        time.sleep(1)
+        if cnt > 20:
+            sys.exit(1)
+
 @pytest.mark.dependency(depends=['test_begin_suite']) #,'test_edit_script'])
 def test_start_family_a():
     node_op("/test/a", "requeue")
@@ -125,16 +136,7 @@ def test_start_family_a():
     handle_response(request('put', '{}&command=alter&argument1=change&argument2=event&argument3=begin&argument4=set&argument5=/test/a'.format(get_url())))
 
     for task in ['a', 'b', 'c']:
-        status = None
-        cnt=0
-        while status != "complete":
-            status = request('get', '{}&command=query&argument1=state&argument2=/test/a/{}'.format(get_url(), task)).content.decode("utf-8").strip()
-            print("Task {} status {}".format(task, status))
-            if status != "complete":
-                cnt += 1
-                time.sleep(2)
-                if cnt > 20:
-                    sys.exit(1)
+        wait_for_task_status('/test/a/{}'.format(task), 'complete')
 
 @pytest.mark.dependency(depends=['test_begin_suite'])# ,'test_edit_script'])
 def test_start_family_b():
@@ -145,21 +147,17 @@ def test_start_family_b():
     handle_response(request('put', '{}&command=alter&argument1=change&argument2=event&argument3=begin&argument4=set&argument5=/test/b'.format(get_url())))
 
     for task in ['a_api', 'b_api', 'c_api']:
-        status = None
-        cnt=0
-        while status != "complete":
-            status = request('get', '{}&command=query&argument1=state&argument2=/test/b/{}'.format(get_url(), task)).content.decode("utf-8").strip()
-            print("Task {} status {}".format(task, status))
-            if status != "complete":
-                cnt += 1
-                time.sleep(2)
-                if cnt > 20:
-                    sys.exit(1)
+        wait_for_task_status('/test/b/{}'.format(task), 'complete')
 
 @pytest.mark.dependency(depends=["test_load_suite"])
 def test_group():
     handle_response(request('get', '{}&command=group&argument=get;why%20/test'.format(get_url())))
     handle_response(request('get', '{}&command=group&argument={}'.format(get_url(), requests.utils.quote('halt=yes;reloadpasswdfile;restart;'))))
+
+@pytest.mark.dependency(depends=["test_start_family_b"])
+def test_run():
+    handle_response(request('put' ,'{}&command=run&argument=/test/b/a_api'.format(get_url())))
+    wait_for_task_status('/test/b/a_api', 'complete')
 
 @pytest.mark.dependency(depends=["test_load_suite","test_start_family_b"])
 def test_delete_suite():
@@ -168,12 +166,20 @@ def test_delete_suite():
 def test_user():
     handle_response(request('get', '{}&command=user&argument=fred'.format(get_url())), expected_code=[405])
 
-def test_unknown():
-    handle_response(request('get' ,'{}&command=xxxyyy'.format(get_url())), expected_code = [500])
+def test_unknown_command():
+    handle_response(request('get' ,'{}&command=xxxyyy'.format(get_url())), expected_code = [501])
+
+@pytest.mark.skip(reason="no way to test this (generated gnuplot files)")
+def test_server_load():
+    handle_response(request('get' ,'{}&command=server_load'.format(get_url())))
 
 def test_server_version():
     handle_response(request('get' ,'{}&command=server_version'.format(get_url())))
 
+def test_shutdown():
+    handle_response(request('get', '{}&command=group&argument={}'.format(get_url(), requests.utils.quote('shutdown=yes;restart;'))))
+
+@pytest.mark.skip(reason="need to find a way to start ssl-server first")
 def test_ssl():
     handle_response(request('get' ,'{}&command=stats&ssl=on'.format(get_url())))
 
