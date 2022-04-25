@@ -177,7 +177,18 @@ std::string Openssl::certificates_dir() const
 std::string Openssl::pem() const
 {
    std::string str = certificates_dir();
-   if (ssl_ == "1") { str += "dh2048.pem"; return str;}
+   if (ssl_ == "1") {
+      // assume 2048-bit dh key, but accept 1024-bit for
+      // backwards-compatibility (note: openssl might
+      // not accept it, depending on the version used)
+      str += "dh2048.pem";
+
+      if (!fs::exists(str)) {
+         return certificates_dir() + "dh1024.pem";
+      }
+      return str;
+   }
+
    str += ssl_;
    str += ".pem";
    return str;
