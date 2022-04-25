@@ -20,6 +20,7 @@
 #include "CtsApi.hpp"
 #include "Defs.hpp"
 #include "Suite.hpp"
+#include "Base64.hpp"
 
 using namespace ecf;
 using namespace std;
@@ -64,7 +65,14 @@ ReplaceNodeCmd::ReplaceNodeCmd(const std::string& node_path, bool createNodesAsN
    // Parse the file and load the defs file into memory.
    std::string errMsg, warningMsg;
    defs_ptr client_defs = Defs::create();
-   if ( ! client_defs->restore( path_to_defs , errMsg , warningMsg) ) {
+   bool ok = false;
+   if (base64_validate(path_to_defs)) {
+      ok = client_defs->restore_from_string(base64_decode(path_to_defs), errMsg, warningMsg);
+   }
+   else {
+      ok = client_defs->restore( path_to_defs , errMsg , warningMsg);
+   }
+   if (!ok) {
       std::stringstream ss;
       ss << "ReplaceNodeCmd::ReplaceNodeCmd: Could not parse file " <<  path_to_defs  << " : " << errMsg;
       throw std::runtime_error( ss.str() );
