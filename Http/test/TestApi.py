@@ -69,15 +69,13 @@ def test_suites():
 
     assert(resp.content.decode('utf-8').strip() == 'test')
 
-@pytest.mark.skip(reason="pakkosubmittaa taskin")
-@pytest.mark.dependency(depends=["test_load_suite"])
-def test_edit_script():
-    handle_response(request('put', '{}&command=edit_script&argument1=/test/a/b&argument2=submit_file&argument3={}&argument4=false&argument5=no_run'.format(get_url(), load_file('a.ecf'))))
-    handle_response(request('put', '{}&command=edit_script&argument1=/test/a/b&argument2=edit'.format(get_url())))
-
 @pytest.mark.dependency(depends=["test_load_suite"])
 def test_begin_suite():
     handle_response(request('put', '{}&command=begin&argument={}'.format(get_url(), SUITE_NAME)))
+
+def test_file():
+    resp = response = handle_response(request('get', '{}&command=file&argument={}/a/a'.format(get_url(), SUITE_NAME)))
+    assert(resp.content.decode('utf-8') == '# ecf_script_origin : ECF_FILES(PRUNE_ROOT) : /tmp/a.ecf\n%include <head.h>\n\ndate\n\nsleep 1\n\ndate\n\n%include <tail.h>\n\n\n')
 
 @pytest.mark.dependency(depends=["test_load_suite"])
 def test_get_suite():
@@ -159,6 +157,25 @@ def test_run():
     handle_response(request('put' ,'{}&command=run&argument=/test/b/a_api'.format(get_url())))
     wait_for_task_status('/test/b/a_api', 'complete')
 
+@pytest.mark.dependency(depends=["test_load_suite"])
+def test_edit_script():
+    handle_response(request('put', '{}&command=edit_script&argument1=/test/a/b&argument2=submit_file&argument3={}'.format(get_url(), load_file('a.ecf'))))
+    handle_response(request('put', '{}&command=edit_script&argument1=/test/a/b&argument2=edit'.format(get_url())))
+
+    wait_for_task_status('/test/a/b', 'complete')
+
+@pytest.mark.dependency(depends=["test_load_suite"])
+def test_archive_suite():
+    handle_response(request('put', '{}&command=archive&argument={}'.format(get_url(), SUITE_NAME)))
+
+@pytest.mark.dependency(depends=["test_archive_suite"])
+def test_restore_suite():
+    handle_response(request('put', '{}&command=restore&argument={}'.format(get_url(), SUITE_NAME)))
+
+@pytest.mark.dependency(depends=["test_start_family_b"])
+def test_replace():
+    handle_response(request('put', '{}&command=replace&argument1={}&argument2={}'.format(get_url(), SUITE_NAME, load_file("test-small.def"))))
+
 @pytest.mark.dependency(depends=["test_load_suite","test_start_family_b"])
 def test_delete_suite():
     handle_response(request('delete', '{}&command=delete&argument=yes&argument2={}'.format(get_url(), SUITE_NAME)))
@@ -181,7 +198,7 @@ def test_shutdown():
 
 @pytest.mark.skip(reason="need to find a way to start ssl-server first")
 def test_ssl():
-    handle_response(request('get' ,'{}&command=stats&ssl=on'.format(get_url())))
+    handle_response(request('get' ,'{}&command=stats&ssl=1'.format(get_url())))
 
 def test_stats():
     handle_response(request('get' ,'{}&command=stats'.format(get_url())))
