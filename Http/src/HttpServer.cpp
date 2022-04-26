@@ -12,18 +12,18 @@
 /////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
 
 #include "HttpServer.hpp"
+#include "Child.hpp"
 #include "ClientInvoker.hpp"
 #include <boost/filesystem.hpp>
-#include "Child.hpp"
 
 #ifdef ECF_OPENSSL
 #define CPPHTTPLIB_OPENSSL_SUPPORT
 #endif
 
+#include "Base64.hpp"
 #include "HttpMethod.hpp"
 #include "HttpServerException.hpp"
 #include <httplib.h>
-#include "Base64.hpp"
 
 static bool verbose_ = false;
 static bool no_ssl = false;
@@ -54,11 +54,11 @@ struct child_env {
    std::string rid;           // ECF_RID:      Process id. Also used for zombie detection
    std::string try_no;        // ECF_TRYNO:    Current try number of the task
    // Optional
-   std::string timeout;       // ECF_TIMEOUT:  Max time in *seconds* for client to deliver message
-   std::string hostfile;      // ECF_HOSTFILE: File that lists alternate hosts to try
-   std::string denied;        // ECF_DENIED:   Provides a way for child to exit with an error, if server denies connection
-   std::string no_ecf;        // NO_ECF:       Exits ecflow_client immediately with success
-   std::string zombie_timeout; // ECF_ZOMBIE_TIMEOUT:
+   std::string timeout;   // ECF_TIMEOUT:  Max time in *seconds* for client to deliver message
+   std::string hostfile;  // ECF_HOSTFILE: File that lists alternate hosts to try
+   std::string denied;    // ECF_DENIED:   Provides a way for child to exit with an error, if server denies connection
+   std::string no_ecf;    // NO_ECF:       Exits ecflow_client immediately with success
+   std::string zombie_timeout;  // ECF_ZOMBIE_TIMEOUT:
 };
 
 std::vector<std::string> Split(const std::string& str, const std::string delim) {
@@ -68,7 +68,8 @@ std::vector<std::string> Split(const std::string& str, const std::string delim) 
    return {first, last};
 }
 
-std::string get_value(const httplib::Request& request, const std::string& key, const std::string& default_value = "NONE") {
+std::string get_value(const httplib::Request& request, const std::string& key,
+                      const std::string& default_value = "NONE") {
    const std::string val = request.get_param_value(key.c_str());
    if (val.empty()) {
       if (default_value == "NONE") {
@@ -116,17 +117,27 @@ std::vector<std::string> create_argv(const command& cmd) {
 
    argv.push_back("ecflow_http");
 
-   if (cmd.username.empty() == false) argv.insert(argv.end(), { "--user", cmd.username });
-   if (cmd.host.empty() == false) argv.insert(argv.end(), { "--host", cmd.host });
-   if (cmd.port.empty() == false) argv.insert(argv.end(), { "--port", cmd.port });
-   if (cmd.ssl.empty() == false) argv.push_back("--ssl");
+   if (cmd.username.empty() == false)
+      argv.insert(argv.end(), {"--user", cmd.username});
+   if (cmd.host.empty() == false)
+      argv.insert(argv.end(), {"--host", cmd.host});
+   if (cmd.port.empty() == false)
+      argv.insert(argv.end(), {"--port", cmd.port});
+   if (cmd.ssl.empty() == false)
+      argv.push_back("--ssl");
    argv.push_back("--" + cmd.name);
-   if (cmd.argument1.empty() == false) argv.push_back(cmd.argument1);
-   if (cmd.argument2.empty() == false) argv.push_back(cmd.argument2);
-   if (cmd.argument3.empty() == false) argv.push_back(cmd.argument3);
-   if (cmd.argument4.empty() == false) argv.push_back(cmd.argument4);
-   if (cmd.argument5.empty() == false) argv.push_back(cmd.argument5);
-   if (cmd.argument6.empty() == false) argv.push_back(cmd.argument6);
+   if (cmd.argument1.empty() == false)
+      argv.push_back(cmd.argument1);
+   if (cmd.argument2.empty() == false)
+      argv.push_back(cmd.argument2);
+   if (cmd.argument3.empty() == false)
+      argv.push_back(cmd.argument3);
+   if (cmd.argument4.empty() == false)
+      argv.push_back(cmd.argument4);
+   if (cmd.argument5.empty() == false)
+      argv.push_back(cmd.argument5);
+   if (cmd.argument6.empty() == false)
+      argv.push_back(cmd.argument6);
 
    return argv;
 }
@@ -134,25 +145,24 @@ std::vector<std::string> create_argv(const command& cmd) {
 std::pair<int, std::string> call_ecflow(const command& cmd, const child_env& cenv) {
    std::vector<std::string> argv = create_argv(cmd);
 
-   std::stringstream buffer;
-
    if (verbose_) {
-      std::cout << "args:\n";
+      printf("args:\n");
       for (int i = 0; i < argv.size(); i++) {
-         std::cout << i << "/" << argv.size() << ": " << argv[i] << "\n";
+         printf("%d/%d: %s\n", i, argv.size(), argv[i].c_str());
       }
       if (cenv.task_path.empty() == false) {
-         std::cout << "child env:\n"
-                   << "0/4 task_path: " << cenv.task_path << "\n1/4 job_password: " << cenv.job_password
-                   << "\n2/4 rid: " << cenv.rid << "\n3/4 try_no: " << cenv.try_no << "\n";
+         printf("child env:\ntask_path: %s\njob_password: %s\nrid: %s\ntry_no: %s\n", cenv.task_path.c_str(),
+                cenv.job_password.c_str(), cenv.rid.c_str(), cenv.try_no.c_str());
       }
    }
 
+   std::stringstream buffer;
    std::streambuf* prevcoutbuf = nullptr;
 
    int status_code = 200;
 
-   if (cmd.method == HTTPMethod::POST) status_code = 201;
+   if (cmd.method == HTTPMethod::POST)
+      status_code = 201;
 
    try {
       ClientInvoker client;
@@ -223,7 +233,6 @@ std::pair<std::string, std::string> get_credentials(const httplib::Headers& head
 }
 
 child_env parse_child_env(const httplib::Request& request, const std::string& command) {
-
    child_env cenv;
 
    if (ecf::Child::valid_child_cmd(command)) {
@@ -252,7 +261,7 @@ command parse_command(const httplib::Request& request) {
 
    cmd.argument1 = get_value(request, "argument", "");
 
-   if (cmd.argument1.empty()) { 
+   if (cmd.argument1.empty()) {
       cmd.argument1 = get_value(request, "argument1", "");
    }
 
@@ -278,7 +287,6 @@ command parse_command(const httplib::Request& request) {
 }
 
 std::pair<command, child_env> parse_query_string(const httplib::Request& request) {
-
    command cmd = parse_command(request);
    cmd.method = method(cmd.name);
 
@@ -292,7 +300,7 @@ std::pair<command, child_env> parse_query_string(const httplib::Request& request
       throw HttpServerException(400, "Invalid HTTP method '" + request.method + "' for command '" + cmd.name + "'");
    }
 
-   if (given_method != HTTPMethod::GET && no_ssl == true) {
+   if (given_method != HTTPMethod::GET && ecf::Child::valid_child_cmd(cmd.name) == false && no_ssl == true) {
       throw HttpServerException(400, "Method " + request.method + " only allowed with SSL");
    }
 
@@ -319,14 +327,12 @@ void handle_query(const httplib::Request& request, httplib::Response& response) 
 }
 
 void ApplyListeners(httplib::Server& http_server) {
-   auto dump_headers = [](const httplib::Headers& headers) {
-      std::stringstream ss;
+   const auto dump_headers = [](const httplib::Headers& headers, std::stringstream& ss) {
       for (const auto& m : headers) {
          ss << m.first << ": " << m.second << "\n";
       }
-      return ss.str();
    };
-   auto format = [&dump_headers](const httplib::Request& req, const httplib::Response& res) {
+   const auto format = [&dump_headers](const httplib::Request& req, const httplib::Response& res) {
       std::stringstream ss;
 
       ss << req.method << " " << req.version << " " << req.path;
@@ -338,17 +344,15 @@ void ApplyListeners(httplib::Server& http_server) {
          sep = '&';
       }
 
-      ss << "\n";
-
       if (verbose_) {
-         ss << dump_headers(req.headers);
+         dump_headers(req.headers, ss);
 
          ss << "\nresponse: ";
          ss << res.status << " " << res.version << "\n";
-         ss << dump_headers(res.headers) << "\n";
+         dump_headers(res.headers, ss);
 
          if (!res.body.empty()) {
-            ss << res.body << "\n";
+            ss << "\n" << res.body;
          }
       }
       return ss.str();
@@ -367,17 +371,20 @@ void ApplyListeners(httplib::Server& http_server) {
        "/query", [](const httplib::Request& request, httplib::Response& response) { handle_query(request, response); });
 
    http_server.set_exception_handler([](const httplib::Request& req, httplib::Response& res, std::exception& e) {
-      std::cout << "Exception: Error 500: " << e.what() << "\n";
+      printf("Exception: Error 500: %s\n", e.what());
       res.status = 500;
       res.set_content(e.what(), "text/plain");
    });
 
    http_server.set_error_handler([&format](const httplib::Request& req, httplib::Response& res) {
-      std::cout << "Error: " << format(req, res);
+      printf("Error: %s\n", format(req, res).c_str());
    });
 
-   http_server.set_logger(
-       [&format](const httplib::Request& req, const httplib::Response& res) { std::cout << format(req, res); });
+   http_server.set_logger([&format](const httplib::Request& req, const httplib::Response& res) {
+      const std::string str = format(req, res);
+      // using std::cout crashes with many threads calling
+      printf("%s\n", str.c_str());
+   });
 }
 
 void StartServer(httplib::Server& http_server, int port) {
